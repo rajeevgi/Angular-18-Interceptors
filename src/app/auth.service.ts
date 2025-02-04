@@ -9,6 +9,7 @@ export class AuthService{
   constructor(private http : HttpClient) { }
 
   getData() {
+    console.log("Api call triggered...")
     return this.http.get('https://jsonplaceholder.typicode.com/posts')
   }
 }
