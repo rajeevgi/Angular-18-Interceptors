@@ -1,0 +1,18 @@
+<div>
+  <h1>Posts</h1>
+  <button (click)="fetchData()">Click here to get Data</button>
+
+  <ol style="list-style: none;">
+    <li *ngFor="let post of posts">
+      <h1>Id : {{ post.id }}</h1>
+      <h3>Title : {{ post.title }}</h3>
+      <h5>Description :</h5><span>{{ post.body }}</span> 
+    </li>
+  </ol>
+
+</div>
+
+
+
+
+<router-outlet></router-outlet>
