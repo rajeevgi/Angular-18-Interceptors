@@ -1,59 +1,117 @@
-# InterceptorApp
+# Angular 18 HTTP Interceptors
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.6.
+## Introduction
+HTTP Interceptors in Angular 18 are a powerful tool for modifying outgoing HTTP requests and incoming responses. They are commonly used for authentication, logging, error handling, and request transformation.
 
-## Development server
+## Features
+- Modify HTTP requests before they are sent.
+- Handle global error responses.
+- Add authentication tokens.
+- Log requests and responses.
 
-To start a local development server, run:
-
-```bash
-ng serve
+## Installation
+Ensure you have Angular 18 installed. If not, update your Angular CLI and create a new project:
+```sh
+npm install -g @angular/cli
+ng new my-angular-app
+cd my-angular-app
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Creating an HTTP Interceptor
+Generate an interceptor using the Angular CLI:
+```sh
+ng generate interceptor auth
+```
+This will create `auth.interceptor.ts` inside the `src/app` folder.
 
-## Code scaffolding
+### Implementing the Interceptor
+Edit `auth.interceptor.ts` to include authentication headers:
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = localStorage.getItem('authToken');
+    
+    if (token) {
+      req = req.clone({
+        setHeaders: { Authorization: `Bearer ${token}` }
+      });
+    }
 
-```bash
-ng generate component component-name
+    return next.handle(req);
+  }
+}
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Registering the Interceptor
+Modify `app.module.ts` to provide the interceptor:
+```typescript
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { AuthInterceptor } from './auth.interceptor';
 
-```bash
-ng generate --help
+@NgModule({
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule
+  ],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
 ```
 
-## Building
+## Using the Interceptor
+Make an HTTP request in a service:
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
-To build the project run:
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  constructor(private http: HttpClient) {}
 
-```bash
-ng build
+  getData(): Observable<any> {
+    return this.http.get('https://api.example.com/data');
+  }
+}
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Error Handling Interceptor Example
+To globally handle errors, modify the interceptor:
+```typescript
+import { Injectable } from '@angular/core';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+@Injectable()
+export class ErrorInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(req).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('HTTP Error:', error);
+        return throwError(() => new Error(error.message));
+      })
+    );
+  }
+}
 ```
 
-## Running end-to-end tests
+## Conclusion
+Angular 18 HTTP Interceptors provide a powerful way to manage HTTP requests globally. They are useful for authentication, logging, error handling, and request transformation.
 
-For end-to-end (e2e) testing, run:
+For more information, refer to the [Angular documentation](https://angular.io/guide/http-interceptors).
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
